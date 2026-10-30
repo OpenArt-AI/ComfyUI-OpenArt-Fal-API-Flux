@@ -7,7 +7,7 @@ import io
 from PIL import Image
 import logging
 import json
-import requests
+from .safe_fetch import safe_get_image_bytes
 import numpy as np
 import torch
 
@@ -123,11 +123,12 @@ class BaseFalAPIFluxNode:
                         continue
                 else:
                     # Handle regular URL
+                    # The URL comes from the fal response: only fetch https fal
+                    # result hosts, pinned to a validated public IP, with each
+                    # redirect hop re-checked (see modules/safe_fetch.py).
                     try:
-                        response = requests.get(img_url)
-                        response.raise_for_status()
-                        img_data = response.content
-                    except requests.RequestException as e:
+                        img_data = safe_get_image_bytes(img_url)
+                    except Exception as e:
                         logger.error(f"Failed to download image from URL for image {index}: {str(e)}")
                         continue
 
